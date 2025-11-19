@@ -1,22 +1,26 @@
-### Crear un pago
-POST {{baseUrl}}/payments
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiYW5naWVjYWJhbDM1QGdtYWlsLmNvbSIsInJvbGUiOiJDTElFTlQiLCJpYXQiOjE3NjM0NDA4NDUsImV4cCI6MTc2MzUyNzI0NX0.dzE4gXMQfoJ3jrq0o9Xd577u_jnsX-h2-1SKWtWCPl8
+@sessionId = cs_test_a1uy4UjD1mR2ODmK8ZTBf0Y2fU8PduVtqqggdy9LHXZutJHIj7xbJPUAyL
+
+### Crear sesión de pago
+POST {{baseUrl}}/payments/stripe/checkout
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "orderId": 1,
-    "userId": 2,
-    "amount": 250.00,
-    "method": "credit_card",
-    "transactionId": "TX-123456"
+    "orderId": 3
 }
+
+### Verificar Estado de Pago
+GET {{baseUrl}}/payments/verify?sessionId={{sessionId}}
+Authorization: Bearer {{token}}
 
 ### Obtener todos los pagos (solo admin)
 GET {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 
 ### Obtener pago por ID
-GET {{baseUrl}}/payments/1
+GET {{baseUrl}}/payments/3
 Authorization: Bearer {{token}}
 
 ### Actualizar un pago
@@ -30,7 +34,7 @@ Content-Type: application/json
 }
 
 ### Cambiar estado del pago
-PATCH {{baseUrl}}/payments/1/status
+PATCH {{baseUrl}}/payments/2
 Authorization: Bearer {{token}}
 Content-Type: application/json
 

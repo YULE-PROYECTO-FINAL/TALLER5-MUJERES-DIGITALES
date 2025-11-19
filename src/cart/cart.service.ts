@@ -1,141 +1,138 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Cart } from './entities/cart.entity';
 import { Product } from '../product/entities/product.entity';
-import { User } from '../user/entities/user.entity';
-import { CreateCartDto } from './dtos/create-cart.dto';
-import { UpdateCartDto } from './dtos/update-cart.dto';
+import { CartItem } from './entities/cart-item.entity'; // 👈 1. Importar CartItem
 
 @Injectable()
 export class CartService {
     constructor(
         @InjectRepository(Cart)
         private readonly cartRepo: Repository<Cart>,
-
-        @InjectRepository(User)
-        private readonly userRepo: Repository<User>,
-
+        
+        @InjectRepository(CartItem)
+        private readonly itemRepo: Repository<CartItem>,
+        
         @InjectRepository(Product)
         private readonly productRepo: Repository<Product>,
     ) {}
 
-    // ============================
-    // GET ALL CARTS
-    // ============================
-    async findAll(): Promise<Cart[]> {
-        return this.cartRepo.find({
-        relations: ['user', 'products', 'orders'],
-        });
-    }
-
-    // ============================
-    // GET ONE CART
-    // ============================
-    async findOne(id: number): Promise<Cart> {
-        const cart = await this.cartRepo.findOne({
-        where: { id },
-        relations: ['user', 'products', 'orders'],
+    // ==========================================
+    // ENCONTRAR O CREAR CARRITO (Con items cargados)
+    // ==========================================
+    async findOrCreateCart(userId: number): Promise<Cart> {
+        // Cargar 'items' y 'items.product' para tener acceso a la cantidad
+        let cart = await this.cartRepo.findOne({
+            where: { user: { id: userId }, checkedOut: false },
+            relations: ['user', 'items', 'items.product'],
         });
 
         if (!cart) {
-        throw new NotFoundException(`Cart with ID ${id} not found`);
+            cart = this.cartRepo.create({ user: { id: userId } });
+            await this.cartRepo.save(cart);
+            cart.items = [];
         }
-
         return cart;
     }
 
-    // ============================
-    // CREATE CART
-    // ============================
-    async create(dto: CreateCartDto): Promise<Cart> {
-        const user = await this.userRepo.findOne({ where: { id: dto.userId } });
+    async findOne(id: number): Promise<Cart> {
+        const cart = await this.cartRepo.findOne({
+            where: { id },
+            relations: ['user', 'items', 'items.product'],
+        });
+        if (!cart) {
+            throw new NotFoundException(`Cart ${id} not found`);
+        }
+        return cart;
+    }
+    
+    // ==========================================
+    // AGREGAR/ACTUALIZAR ITEM (Define la cantidad)
+    // ==========================================
+    async addOrUpdateProduct(userId: number, productId: number, quantity: number): Promise<Cart> {
 
-        if (!user) {
-        throw new NotFoundException('User not found');
+        const cart = await this.findOrCreateCart(userId);
+        
+        if (quantity <= 0) {
+            throw new BadRequestException('Quantity must be greater than 0');
         }
 
-        // Check if user already has an active cart
-        const existingCart = await this.cartRepo.findOne({
-        where: { user: { id: dto.userId }, checkedOut: false },
-        });
-
-        if (existingCart) {
-        throw new BadRequestException('User already has an active cart');
+        const product = await this.productRepo.findOne({ where: { id: productId } });
+        if (!product) {
+            throw new NotFoundException(`Product ${productId} not found`);
         }
 
-        const cart = this.cartRepo.create({ user });
-
-        // If includes products
-        if (dto.productIds?.length) {
-        const products = await this.productRepo.find({
-            where: { id: In(dto.productIds) },
-        });
-
-        if (products.length !== dto.productIds.length) {
+        if (product.cantidad < quantity) {
+            // Falla si la cantidad solicitada excede el stock disponible
             throw new BadRequestException(
-            'One or more product IDs do not exist',
+                `Insufficient stock for product ${productId}. Available: ${product.cantidad}`,
             );
         }
+        
+        // Buscar si el CartItem ya existe
+        const existingItem = cart.items.find(item => item.product.id === productId);
 
-        cart.products = products;
+        if (existingItem) {
+            // Actualizar la cantidad y guardar el CartItem
+            existingItem.quantity = quantity;
+            await this.itemRepo.save(existingItem);
+        } else {
+            // Crear y guardar un nuevo CartItem
+            const newItem = this.itemRepo.create({
+                cart: cart,
+                product: product,
+                quantity: quantity,
+            });
+            await this.itemRepo.save(newItem);
+            cart.items.push(newItem);
         }
 
-        return this.cartRepo.save(cart);
+        return cart; 
     }
 
-    // ============================
-    // UPDATE CART (Add/Replace Products)
-    // ============================
-    async update(id: number, dto: UpdateCartDto): Promise<Cart> {
-        const cart = await this.findOne(id);
+    // ==========================================
+    // ELIMINAR ITEM
+    // ==========================================
+    async removeProduct(userId: number, productId: number): Promise<Cart> {
 
-        if (dto.productIds) {
-        const products = await this.productRepo.find({
-            where: { id: In(dto.productIds) },
-        });
+        const cart = await this.findOrCreateCart(userId);
+        
+        const itemToRemove = cart.items.find(item => item.product.id === productId);
 
-        if (products.length !== dto.productIds.length) {
-            throw new BadRequestException(
-            'One or more product IDs do not exist',
-            );
+        if (!itemToRemove) {
+            throw new NotFoundException(`Product ${productId} not found in cart`);
         }
 
-        cart.products = products;
+        // Eliminar el CartItem de la bd
+        await this.itemRepo.remove(itemToRemove);
+        
+        // Recargar el carrito para tener la lista de ítems sin el elemento eliminado
+        return this.findOne(cart.id); 
+    }
+
+    // ==========================================
+    // CHECKOUT
+    // ==========================================
+    async checkout(cartId: number): Promise<Cart> {
+        const cart = await this.findOne(cartId);
+        
+        if (!cart.items || cart.items.length === 0) {
+            throw new BadRequestException('Cannot checkout an empty cart.');
         }
-
-        return this.cartRepo.save(cart);
-    }
-
-    // ============================
-    // DELETE CART
-    // ============================
-    async remove(id: number): Promise<{ message: string }> {
-        const cart = await this.findOne(id);
-        await this.cartRepo.remove(cart);
-
-        return { message: `Cart ${id} deleted successfully` };
-    }
-
-    // ============================
-    // CHECKOUT (Finalizes Cart)
-    // ============================
-    async checkout(id: number): Promise<{ message: string }> {
-        const cart = await this.findOne(id);
 
         if (cart.checkedOut) {
-        throw new BadRequestException('Cart is already checked out');
-        }
-
-        if (!cart.products || cart.products.length === 0) {
-        throw new BadRequestException(
-            'Cannot checkout an empty cart',
-        );
+            throw new BadRequestException('Cart is already checked out.');
         }
 
         cart.checkedOut = true;
-        await this.cartRepo.save(cart);
-
-        return { message: `Cart ${id} checked out successfully` };
+        return this.cartRepo.save(cart);
+    }
+    
+    // ==========================================
+    // FIND ALL (ADMIN)
+    // ==========================================
+    async findAll(): Promise<Cart[]> {
+        return this.cartRepo.find({ relations: ['user', 'items', 'items.product'] });
     }
 }

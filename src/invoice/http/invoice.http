@@ -1,3 +1,5 @@
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImVtYWlsIjoiYW5naWVjYWJhbDM1QGdtYWlsLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc2MzUwMjU3NywiZXhwIjoxNzYzNTg4OTc3fQ.BSFZatAIgrSlp76Vcyn9Tn0TYY3PH3YHSD0O3_sX0y4
 ### Crear factura
 POST {{baseUrl}}/invoices
 Authorization: Bearer {{token}}
@@ -5,9 +7,9 @@ Content-Type: application/json
 
 {
     "userId": 1,
-    "orderId": 2,
+    "orderId": 3,
     "paymentId": 3,
-    "totalAmount": 250.00,
+    "totalAmount": 450000,
     "invoiceNumber": "INV-2025-001"
 }
 

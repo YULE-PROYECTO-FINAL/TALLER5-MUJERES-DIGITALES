@@ -10,7 +10,7 @@ export class AuthController {
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto.email, dto.password);
+    return this.authService.register(dto);
   }
 
   @Get('verify')
@@ -27,9 +27,19 @@ export class AuthController {
   requestReset(@Body('email') email: string) {
     return this.authService.requestPasswordReset(email);
   }
-
-  @Post('reset-password')
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto.token, dto.newPassword);
-  }
+  @Get('reset-password')
+    showResetPasswordPage(@Query('token') token: string) {
+      
+        return { 
+            status: "OK", 
+            message: "Ruta temporal de prueba para restablecimiento recibida.",
+            instruccion: "Ahora, debe probar la ruta POST en tu cliente HTTP (Postman/ThunderClient) para ejecutar el cambio de contraseña.",
+            token_recibido: token 
+        };
+    }
+    
+    @Post('reset-password')
+    resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto.token, dto.newPassword);
+    }
 }

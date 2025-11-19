@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller';
 import { User } from '../user/entities/user.entity';
 import { MailModule } from './mail/mail.module';
 import { JwtStrategy } from './providers/jwt.strategy';
+import { AuthGateway } from './auth.gateway';
+import { RoleModule } from '../role/role.module';
 
 @Module({
   imports: [
@@ -15,9 +17,10 @@ import { JwtStrategy } from './providers/jwt.strategy';
       signOptions: { expiresIn: '1d' },
     }),
     MailModule,
+    RoleModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, AuthGateway],
   exports: [AuthService],
 })
 export class AuthModule {}

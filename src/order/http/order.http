@@ -1,39 +1,104 @@
-### Crear un pedido
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiYW5naWVjYWJhbDM1QGdtYWlsLmNvbSIsInJvbGUiOiJDTElFTlQiLCJpYXQiOjE3NjM0NDA4NDUsImV4cCI6MTc2MzUyNzI0NX0.dzE4gXMQfoJ3jrq0o9Xd577u_jnsX-h2-1SKWtWCPl8
+
+
+### Crear una Orden (USO CLIENTE)
+// El stock se descuenta aquí. El cartId debe ser del usuario y estar checkedOut: true.
 POST {{baseUrl}}/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "userId": 2,
     "cartId": 1
 }
 
-### Obtener todos los pedidos (solo admin)
+
+### Ver Mis Órdenes
+GET {{baseUrl}}/orders/my-orders
+Authorization: Bearer {{token}}
+
+
+### Ver Mi Orden Específica by ID
+GET {{baseUrl}}/orders/3
+Authorization: Bearer {{token}}
+
+
+###Intentar ver la Orden de Otro Usuario (IDOR Check)
+GET {{baseUrl}}/orders/4
+Authorization: Bearer {{token}}
+
+
+### Cancelar Mi Orden (Acción de Cliente)
+// Solo se puede cancelar si está PENDING.
+PATCH {{baseUrl}}/orders/2/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "status": "CANCELLED"
+}
+
+
+### Intentar Poner un Estado que NO sea CANCELLED (CLIENTE)
+PATCH {{baseUrl}}/orders/3/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "status": "CONFIRMED"
+}
+
+### Intentar crear orden con carrito de otro usuario
+// El servicio busca el carrito por id Y el userId del token.
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "cartId": 1
+}
+
+### Intentar crear orden con carrito NO finalizado (checkedOut: false)
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "cartId": 2
+}
+
+
+### Cliente intenta ver todas las órdenes
+// ESPERA: 403 Forbidden
 GET {{baseUrl}}/orders
 Authorization: Bearer {{token}}
 
-### Obtener un pedido específico
-GET {{baseUrl}}/orders/1
-Authorization: Bearer {{token}}
+---
 
-### Actualizar pedido (cambiar cart o user)
+### Administrador ve todas las órdenes
+// ESPERA: 200 OK
+GET {{baseUrl}}/orders
+Authorization: Bearer {{adminToken}}
+
+---
+
+### Cliente intenta actualizar la orden
+// ESPERA: 403 Forbidden
 PATCH {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "status": "paid"
+    "total": 50000
 }
 
-### Cambiar estado del pedido
+
+### Administrador cambia estado a CONFIRMED
+// ESPERA: 200 OK
 PATCH {{baseUrl}}/orders/1/status
-Authorization: Bearer {{token}}
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-    "status": "shipped"
+    "status": "CONFIRMED"
 }
-
-### Eliminar pedido
-DELETE {{baseUrl}}/orders/1
-Authorization: Bearer {{token}}
