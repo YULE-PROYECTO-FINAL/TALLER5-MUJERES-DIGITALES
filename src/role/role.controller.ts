@@ -18,23 +18,23 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard, RolesGuard)
+//@UseGuards(JwtAuthGuard, RolesGuard)
 export class RoleController {
     constructor(private readonly roleService: RoleService) {}
 
-    @Roles(UserRole.ADMIN)
+    //@Roles(UserRole.ADMIN)
     @Get()
     findAll() {
         return this.roleService.findAll();
     }
 
-    @Roles(UserRole.ADMIN)
+    //@Roles(UserRole.ADMIN)
     @Get(':id')
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.roleService.findOne(id);
     }
 
-    @Roles(UserRole.ADMIN)
+    //@Roles(UserRole.ADMIN)
     @Post()
     create(@Body() dto: CreateRoleDto) {
         return this.roleService.create(dto);

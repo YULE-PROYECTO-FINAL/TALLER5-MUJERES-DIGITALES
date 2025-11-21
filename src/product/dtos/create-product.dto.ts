@@ -21,6 +21,10 @@ export class CreateProductDto {
   @IsNotEmpty()
   price: number;
 
+  @IsNumber()
+  @IsNotEmpty()
+  cantidad: number;
+
   @IsOptional()
   @IsBoolean()
   available?: boolean;

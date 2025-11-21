@@ -23,6 +23,9 @@ export class Product {
     @Column('decimal', { precision: 10, scale: 2 })
     price: number;
 
+    @Column({ type: 'integer', default: 0 })
+    cantidad: number;
+
     @Column({ default: true })
     available: boolean;
 

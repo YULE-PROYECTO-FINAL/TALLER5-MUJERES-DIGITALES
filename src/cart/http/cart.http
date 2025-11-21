@@ -1,34 +1,67 @@
-### Crear un carrito para un usuario
-POST {{baseUrl}}/carts
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiYW5naWVjYWJhbDM1QGdtYWlsLmNvbSIsInJvbGUiOiJDTElFTlQiLCJpYXQiOjE3NjM0NDA4NDUsImV4cCI6MTc2MzUyNzI0NX0.dzE4gXMQfoJ3jrq0o9Xd577u_jnsX-h2-1SKWtWCPl8
+### 1.1. Obtener o Crear Carrito (CLIENTE)
+GET {{baseUrl}}/carts/my
+Authorization: Bearer {{token}}
+
+### 1.2. Añadir Producto + Cantidad (CLIENTE)
+POST {{baseUrl}}/carts/item
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "userId": 2,
-    "productIds": [1, 3]
+    "productId": 1,
+    "quantity": 3
 }
 
-### Obtener todos los carritos (solo admin)
+### 1.3. 🔄 Actualizar Cantidad del Producto 1 (De 2 a 8)
+POST {{baseUrl}}/carts/item
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "productId": 3,
+    "quantity": 2
+}
+
+### 1.4. Eliminar Producto 1 con IdProducto del Carrito (CLIENTE)
+DELETE {{baseUrl}}/carts/item/4
+Authorization: Bearer {{token}}
+
+### 1.5. Finalizar (Checkout) el Carrito (debe fallar si está vacío)
+
+PATCH {{baseUrl}}/carts/checkout
+Authorization: Bearer {{token}}
+
+---
+
+### 1.6. Finalizar (Checkout) el Carrito (éxito)
+POST {{baseUrl}}/carts/item
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "productId": 2,
+    "quantity": 1
+}
+
+PATCH {{baseUrl}}/carts/checkout
+Authorization: Bearer {{token}}
+
+// Las rutas para ADMINS
+
+### Cliente intenta ver todos los carritos
 GET {{baseUrl}}/carts
 Authorization: Bearer {{token}}
 
-### Obtener un carrito por ID
+
+### Administrador ve todos los carritos
+// ESPERA: 200 OK
+GET {{baseUrl}}/carts
+Authorization: Bearer {{adminToken}}
+
+
+### Administrador ve un carrito específico por ID
+// ESPERA: 200 OK (Si existe el carrito con ID 1)
 GET {{baseUrl}}/carts/1
-Authorization: Bearer {{token}}
-
-### Actualizar productos del carrito
-PATCH {{baseUrl}}/carts/1
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "productIds": [1, 2, 4]
-}
-
-### Confirmar compra (checkout)
-PATCH {{baseUrl}}/carts/1/checkout
-Authorization: Bearer {{token}}
-
-### Eliminar carrito
-DELETE {{baseUrl}}/carts/1
-Authorization: Bearer {{token}}
+Authorization: Bearer {{adminToken}}

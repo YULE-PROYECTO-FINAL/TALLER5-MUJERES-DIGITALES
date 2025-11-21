@@ -1,10 +1,12 @@
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIzLCJlbWFpbCI6ImFkcmlAZXhhbXBsZS5jb20iLCJyb2xlIjoiQ0xJRU5UIiwiaWF0IjoxNzYzMjI4MDU4LCJleHAiOjE3NjMzMTQ0NTh9.UCb2n8kf_H1_uL-MI-mh46C83KtziBniUndFkhQBnRU
 ### Crear un rol
 POST {{baseUrl}}/roles
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "nombre": "admin",
+    "nombre": "ADMIN",
     "descripcion": "Acceso completo al sistema"
 }
 
@@ -14,7 +16,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "nombre": "cliente",
+    "nombre": "CLIENT",
     "descripcion": "Usuario registrado con permisos básicos"
 }
 
@@ -36,5 +38,5 @@ Content-Type: application/json
 }
 
 ### Eliminar un rol
-DELETE {{baseUrl}}/roles/3
+DELETE {{baseUrl}}/roles/1
 Authorization: Bearer {{token}}
