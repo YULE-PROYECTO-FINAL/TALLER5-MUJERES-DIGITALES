@@ -1,23 +1,29 @@
-### Crear detalle de pedido
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoiYW5naWVjYWJhbDM1QGdtYWlsLmNvbSIsInJvbGUiOiJDTElFTlQiLCJpYXQiOjE3NjM0NDA4NDUsImV4cCI6MTc2MzUyNzI0NX0.dzE4gXMQfoJ3jrq0o9Xd577u_jnsX-h2-1SKWtWCPl8
+
+### 1. Crear Detalle de Pedido (Solo Admin / Lógica interna)
 POST {{baseUrl}}/order-details
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "orderId": 1,
+    "orderId": 3,
     "productId": 3,
     "quantity": 2
 }
 
-### Obtener todos los detalles de pedidos
+
+### 2. Obtener Todos los Detalles de Pedidos (Solo Admin)
 GET {{baseUrl}}/order-details
 Authorization: Bearer {{token}}
 
-### Obtener un detalle por ID
+
+### 3. Obtener un Detalle por ID (Funciona con token de CLIENTE o ADMIN)
 GET {{baseUrl}}/order-details/1
 Authorization: Bearer {{token}}
 
-### Actualizar cantidad del detalle
+
+### 4. Actualizar Cantidad del Detalle (Solo Admin)
 PATCH {{baseUrl}}/order-details/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -26,6 +32,7 @@ Content-Type: application/json
     "quantity": 5
 }
 
-### Eliminar detalle
+
+### 5. Eliminar Detalle (Solo Admin)
 DELETE {{baseUrl}}/order-details/1
 Authorization: Bearer {{token}}

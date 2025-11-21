@@ -5,6 +5,7 @@ import { Role } from './entities/role.entity';
 import { CreateRoleDto } from './dtos/create-role.dto';
 import { UpdateRoleDto } from './dtos/update-role.dto';
 
+
 @Injectable()
 export class RoleService {
     constructor(
@@ -46,4 +47,13 @@ export class RoleService {
         await this.roleRepo.remove(role);
         return { message: `Role ${id} removed` };
     }
+
+    async findOneByName(nombre: string): Promise<Role | null> {
+        const role = await this.roleRepo.findOne({ 
+            where: { nombre }, 
+        });
+        return role;
+    }
+
+
 }

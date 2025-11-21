@@ -3,10 +3,11 @@ import { User } from '../../user/entities/user.entity';
 import { OrderDetail } from '../../order-detail/entities/order-detail.entity';
 import { Cart } from '../../cart/entities/cart.entity';
 
+
 export enum OrderStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  CANCELLED = 'cancelled',
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
 }
 
 @Entity('orders')

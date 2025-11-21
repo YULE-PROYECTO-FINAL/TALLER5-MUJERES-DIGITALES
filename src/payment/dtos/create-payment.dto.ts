@@ -1,19 +1,26 @@
-import { IsInt, IsNumber, IsString, IsOptional } from 'class-validator';
+import { IsInt, IsNumber, IsString, IsOptional, Min, IsEnum, IsNotEmpty } from 'class-validator';
+import { PaymentMethod } from '../entities/payment.entity';
 
 export class CreatePaymentDto {
-    @IsInt()
-    orderId: number;
-
-    @IsInt()
-    userId: number; // quien paga
-
+    // El único campo obligatorio en el cuerpo de la solicitud (body) es el OrderId
+    @IsNotEmpty()
     @IsNumber()
-    amount: number; // monto que paga (cliente)
+    orderId: number; 
 
-    @IsString()
-    method: string; // e.g. "credit_card", "stripe", "paypal", "transfer"
-
+    // CLAVE: El userId se INYECTA desde el JWT en el controlador. No debe ser obligatorio en el body.
     @IsOptional()
-    @IsString()
-  transactionId?: string; // id del proveedor (opcional)
-}
+    @IsNumber()
+    userId?: number; 
+    
+    // CLAVE: El amount DEBERÍA ser calculado por el backend (lo corregiremos después), 
+    // pero por ahora lo hacemos opcional para que la validación pase si no lo envías.
+    @IsOptional()
+    @IsNumber()
+    @Min(0.01)
+    amount?: number; 
+
+    // CLAVE: El method se fija a 'STRIPE' en el controlador o servicio.
+  @IsOptional()
+    @IsEnum(PaymentMethod)
+    method?: PaymentMethod;
+  }
