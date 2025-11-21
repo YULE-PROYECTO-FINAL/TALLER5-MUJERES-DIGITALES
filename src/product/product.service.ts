@@ -6,6 +6,8 @@ import { Product } from './entities/product.entity';
 import { Category } from '../category/entities/category.entity';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ProductService {
@@ -14,21 +16,18 @@ export class ProductService {
         private readonly productRepo: Repository<Product>,
         @InjectRepository(Category)
         private readonly categoryRepo: Repository<Category>,
-
-    ) {}
+        private readonly httpService: HttpService,
+    ) { }
 
     // ========== MÉTODOS ORIGINALES (CRUD) ==========
 
     /** Obtener todos los productos */
     async findAll(): Promise<Product[]> {
-        const products = await this.productRepo.find({ 
-            relations: ['categories'] });
-        
-        return products.map(product => ({
+        const products = await this.productRepo.find({ relations: ['categories'] });
+        return products.map((product) => ({
             ...product,
-            price: Number(product.price)
+            price: Number(product.price),
         }));
-        
     }
 
     /** Obtener un producto por ID */
@@ -107,8 +106,8 @@ export class ProductService {
     }
 
     /** 📦 OBTENER INFORMACIÓN DE STOCK */
-    async getStockInfo(productId: number): Promise<{ 
-        quantity: number; 
+    async getStockInfo(productId: number): Promise<{
+        quantity: number;
         lowStock: boolean;
         available: boolean;
     }> {
@@ -139,7 +138,7 @@ export class ProductService {
         }
 
         const categoryIds = product.categories.map(cat => cat.id);
-        
+
         const recommendations = await this.productRepo.find({
             where: {
                 categories: { id: In(categoryIds) },
@@ -217,4 +216,168 @@ export class ProductService {
         }));
     }
 
+    /** 
+     * IMPORTAR PRODUCTOS TECH DESDUMMYJSON API
+     * Convierte y guarda en tu base de datos
+     */
+
+    async importTechProductsFromDummyJSON(categoryIds: number[] = []): Promise<{
+        imported: number;
+        skipped: number;
+        errors: number;
+    }> {
+        try {
+            const techCategories = ['smartphones', 'laptops', 'tablets'];
+            let imported = 0;
+            let skipped = 0;
+            let errors = 0;
+
+            for (const apiCategory of techCategories) {
+                try {
+                    const response = await firstValueFrom(
+                        this.httpService.get(`https://dummyjson.com/products/category/${apiCategory}`)
+                    );
+
+                    for (const externalProduct of response.data.products) {
+                        try {
+                            // Verificar si el producto ya existe
+                            const existingProduct = await this.productRepo.findOne({
+                                where: { name: externalProduct.title }
+                            });
+
+                            if (existingProduct) {
+                                skipped++;
+                                continue;
+                            }
+
+                            // Convertir producto externo a tu CreateProductDto
+                            const createProductDto: CreateProductDto = {
+                                name: externalProduct.title,
+                                description: externalProduct.description,
+                                price: externalProduct.price,
+                                cantidad: externalProduct.stock,
+                                available: externalProduct.stock > 0,
+                                imageUrl: externalProduct.thumbnail,
+                                categories: categoryIds.length > 0 ? categoryIds : await this.getDefaultTechCategoryIds()
+                            };
+
+                            // Usar tu método create existente
+                            await this.create(createProductDto);
+                            imported++;
+
+                        } catch (productError) {
+                            console.error(`Error importing product: ${externalProduct.title}`, productError);
+                            errors++;
+                        }
+                    }
+
+                    // Pequeña pausa entre categorías
+                    await new Promise(resolve => setTimeout(resolve, 200));
+
+                } catch (categoryError) {
+                    console.error(`Error fetching category ${apiCategory}:`, categoryError);
+                    errors++;
+                }
+            }
+
+            return { imported, skipped, errors };
+        } catch (error) {
+            console.error('Error in importTechProductsFromDummyJSON:', error);
+            throw new Error('Failed to import products from external API');
+        }
+    }
+
+    /** 
+     * BUSCAR PRODUCTOS EN DUMMYJSON (solo lectura, no guarda)
+     */
+    async searchExternalTechProducts(query: string): Promise<any[]> {
+        try {
+            const response = await firstValueFrom(
+                this.httpService.get(`https://dummyjson.com/products/search?q=${query}`)
+            );
+
+            const techCategories = ['smartphones', 'laptops', 'tablets'];
+            return response.data.products
+                .filter((product: any) => techCategories.includes(product.category))
+                .map((product: any) => ({
+                    externalId: product.id,
+                    name: product.title,
+                    description: product.description,
+                    price: product.price,
+                    stock: product.stock,
+                    brand: product.brand,
+                    category: product.category,
+                    imageUrl: product.thumbnail,
+                    rating: product.rating,
+                    images: product.images
+                }));
+        } catch (error) {
+            console.error('Error searching external products:', error);
+            return [];
+        }
+    }
+
+    /** 
+     * OBTENER PRODUCTOS TECH DE DUMMYJSON (solo visualización)
+     */
+    async getExternalTechProducts(): Promise<any[]> {
+        try {
+            const techCategories = ['smartphones', 'laptops', 'tablets'];
+            let allProducts: any[] = [];
+
+            for (const category of techCategories) {
+                const response = await firstValueFrom(
+                    this.httpService.get(`https://dummyjson.com/products/category/${category}`)
+                );
+                allProducts = [...allProducts, ...response.data.products];
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            return allProducts.map(product => ({
+                externalId: product.id,
+                name: product.title,
+                description: product.description,
+                price: product.price,
+                stock: product.stock,
+                brand: product.brand,
+                category: product.category,
+                imageUrl: product.thumbnail,
+                rating: product.rating,
+                discount: product.discountPercentage
+            }));
+        } catch (error) {
+            console.error('Error fetching external tech products:', error);
+            return [];
+        }
+    }
+
+    /** 
+     * OBTENER IDs DE CATEGORÍAS TECH POR DEFECTO
+     */
+    private async getDefaultTechCategoryIds(): Promise<number[]> {
+        // Buscar categorías tech existentes o crear una por defecto
+        const techCategoryNames = ['Tecnología', 'Electrónicos', 'Smartphones', 'Laptops'];
+
+        const categories = await this.categoryRepo.find({
+            where: [
+                { name: 'Tecnología' },
+                { name: 'Electrónicos' },
+                { name: 'Smartphones' },
+                { name: 'Laptops' }
+            ]
+        });
+
+        if (categories.length > 0) {
+            return categories.map(cat => cat.id);
+        }
+
+        // Si no existen categorías tech, crear una por defecto
+        const defaultCategory = this.categoryRepo.create({
+            name: 'Tecnología',
+            description: 'Productos tecnológicos y electrónicos'
+        });
+        const savedCategory = await this.categoryRepo.save(defaultCategory);
+
+        return [savedCategory.id];
+    }
 }

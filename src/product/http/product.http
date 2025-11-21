@@ -1,51 +1,34 @@
 @baseUrl = http://localhost:3000
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIzLCJlbWFpbCI6ImFkcmlAZXhhbXBsZS5jb20iLCJyb2xlIjoiQ0xJRU5UIiwiaWF0IjoxNzYzMjI4MDU4LCJleHAiOjE3NjMzMTQ0NTh9.UCb2n8kf_H1_uL-MI-mh46C83KtziBniUndFkhQBnRU
-### Crear producto
-POST {{baseUrl}}/products
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjI1LCJlbWFpbCI6Imx1bHkwOTAyMjAwNkBnbWFpbC5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjM2MDg4MjQsImV4cCI6MTc2MzY5NTIyNH0.PnSmkBuxN0uFjivHSrbIGrvxEor7CYYv-OWUUUJ8SaI
+
+### ========== NUEVOS ENDPOINTS DUMMYJSON ==========
+### 1. VER productos tech disponibles en DummyJSON (solo lectura)
+GET {{baseUrl}}/products/external/tech
+Authorization: Bearer {{token}}
+
+
+
+### 2. BUSCAR productos tech en DummyJSON
+GET {{baseUrl}}/products/external/search?q=iphone
+Authorization: Bearer {{token}}
+
+
+
+### 3. BUSCAR laptops en DummyJSON
+GET {{baseUrl}}/products/external/search?q=laptop
+Authorization: Bearer {{token}}
+
+
+
+### 4. BUSCAR tablets en DummyJSON
+GET {{baseUrl}}/products/external/search?q=tablet
+Authorization: Bearer {{token}}
+
+
+
+### 5. IMPORTAR sin categorías específicas (usará categorías por defecto)(SOLO ADMIN)
+POST {{baseUrl}}/products/import/tech
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{
-    "name": "Telefono celular",
-    "description": "Terreneitor 3000 ultimo en tecnology, más rapido que camaron que se duerme",
-    "price": 100000,
-    "cantidad": 10,
-    "imageUrl": "https://example.com/mouse.jpg",
-    "categories": [1, 2]
-}
-
-### Crear producto con imagen
-POST {{baseUrl}}/products
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "name": "Teclado ergonómico",
-    "description": "Una teclado ergonómica de alta calidad",
-    "price": 10000,
-    "available": true,
-    "imageUrl": "https://example.com/keyboard.jpg",
-    "categories": [3, 5]
-}
-
-### Listar todos los productos
-GET {{baseUrl}}/products
-Authorization: Bearer {{token}}
-
-### Obtener producto por ID
-GET {{baseUrl}}/products/2
-Authorization: Bearer {{token}}
-
-### Actualizar producto
-PATCH {{baseUrl}}/products/1
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "price": 99000,
-    "available": false
-}
-
-### Eliminar producto (Ahora lo pruebo)
-DELETE {{baseUrl}}/products/1
-Authorization: Bearer {{token}}
+{}
